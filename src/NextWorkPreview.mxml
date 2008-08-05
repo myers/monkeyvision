@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="vertical" width="200" height="260"
+	creationComplete="handleCreationComplete();"
+	title="Next Work">
+<mx:Script>
+<![CDATA[
+import mx.managers.PopUpManager;
+
+private var nextWorkURL:String;
+
+public function setURL(url:String):void {
+	nextWorkURL = url;
+}
+
+public function setThumbnail(url:String):void {
+	thumbnail.source = url;
+}
+
+private function onClick(event:Event):void {
+	navigateToURL(new URLRequest(nextWorkURL),"_self");
+}
+
+private function handleCreationComplete():void {
+	// Center the TitleWindow container 
+	// over the control that created it.
+    PopUpManager.centerPopUp(this);
+}
+]]>
+</mx:Script>
+<mx:VBox horizontalAlign="center" width="100%" height="100%">
+<mx:Image id="thumbnail" click="onClick(event)"
+	  minHeight="50" minWidth="50"/>
+<mx:Button 
+	label="Cancel"
+    click="PopUpManager.removePopUp(this);"/> 
+</mx:VBox>
+</mx:TitleWindow>

@@ -8,11 +8,13 @@ package {
 
 	import asunit.framework.TestSuite;
 	import org.mediabrainz.monkeyvision.ImageListTest;
+	import SmoothImageTest;
 
 	public class AllTests extends TestSuite {
 
 		public function AllTests() {
 			addTest(new org.mediabrainz.monkeyvision.ImageListTest());
+			addTest(new SmoothImageTest());
 		}
 	}
 }
