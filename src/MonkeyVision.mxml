@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
-	xmlns:local="*"
-	layout="absolute"
-	backgroundColor="#000000" 
-	paddingTop="0"
-	paddingBottom="0"
-	paddingRight="0"
-	paddingLeft="0"
-	verticalGap="0"
-	width="100%"
-	height="100%"
-	x="0"
-	y="0"
-	
-	creationComplete="creationComplete(event)"
-	>
+  xmlns:local="*"
+  layout="absolute"
+  backgroundColor="#000000" 
+  paddingTop="0"
+  paddingBottom="0"
+  paddingRight="0"
+  paddingLeft="0"
+  verticalGap="0"
+  width="100%"
+  height="100%"
+  x="0"
+  y="0"
+  
+  creationComplete="creationComplete(event)"
+  >
 
 <mx:HTTPService method="get" id="imageListXmlData" result="onGetImageList( event )" />
 
@@ -35,154 +35,159 @@ import mx.core.IFlexDisplayObject;
 import NextWorkPreview;
 import com.asual.swfaddress.*;
 import mx.utils.URLUtil;
+import org.osflash.thunderbolt.Logger;
+import mx.utils.ObjectUtil;
 
 [Bindable]
-private var images : ArrayCollection = new ArrayCollection();
-private var doResize : Boolean = false;
+private var images:ArrayCollection = new ArrayCollection();
+
+private var doResize:Boolean = false;
 private var nextWorkWindow:NextWorkPreview;
 
 public function onResize(event:Event):void {
-	setSizes(event);
+  setSizes(event);
 }
 
 private function setSizes(event:Event):void  {
-	imageCanvas.height = event.target.height;
+  imageCanvas.height = event.target.height;
 }
 
 private function showNextWork():void {
-	if (nextWorkWindow != null) return;
-	
-	nextWorkWindow = NextWorkPreview(PopUpManager.createPopUp(this, NextWorkPreview, true));
-	nextWorkWindow.setURL(imageListXmlData.lastResult.images.next_work.url);
-	nextWorkWindow.setThumbnail(imageListXmlData.lastResult.images.next_work.thumbnail);
+  if (nextWorkWindow != null) return;
+  
+  nextWorkWindow = NextWorkPreview(PopUpManager.createPopUp(this, NextWorkPreview, true));
+  nextWorkWindow.setURL(imageListXmlData.lastResult.images.next_work.url);
+  nextWorkWindow.setThumbnail(imageListXmlData.lastResult.images.next_work.thumbnail);
 }
 
 private function goToCollectionPage():void {
-	if (imageListXmlData.lastResult.images.hasOwnProperty('url')) {
-		SWFAddress.href(imageListXmlData.lastResult.images.url);
-	}
+  if (imageListXmlData.lastResult.images.hasOwnProperty('url')) {
+    SWFAddress.href(imageListXmlData.lastResult.images.url);
+  }
 }
 
 private function toggleFullscreen():void {
-	if (systemManager.stage.displayState == StageDisplayState.FULL_SCREEN) {
-		systemManager.stage.displayState = StageDisplayState.NORMAL;
-	} else {
-		try {
-			systemManager.stage.displayState = StageDisplayState.FULL_SCREEN;
-		} catch (err:SecurityError) {
-			Alert.show('Sorry', 'Full screen not supported', mx.controls.Alert.OK);
-		}
-	}
+  if (systemManager.stage.displayState == StageDisplayState.FULL_SCREEN) {
+    systemManager.stage.displayState = StageDisplayState.NORMAL;
+  } else {
+    try {
+      systemManager.stage.displayState = StageDisplayState.FULL_SCREEN;
+    } catch (err:SecurityError) {
+      Alert.show('Sorry', 'Full screen not supported', mx.controls.Alert.OK);
+    }
+  }
 }
 
 public function handleSWFAddress():void {
-	if (images.length == 0) return;
-	var index:Number = 0; 
-	if (SWFAddress.getValue() != '/') {
-    	var currentURL:String = SWFAddress.getValue();
-  		index = int(currentURL.substr(currentURL.lastIndexOf('/')+1));
-	}
-  	imageList.selectedIndex = index; 
-  	onChange();
+  if (images.length == 0) return;
+  var index:Number = 0; 
+  if (SWFAddress.getValue() != '/') {
+      var currentURL:String = SWFAddress.getValue();
+      index = int(currentURL.substr(currentURL.lastIndexOf('/')+1));
+  }
+    imageList.selectedIndex = index; 
+    onChange();
 }
 
 public function creationComplete(event:Event) : void {
-	doResize = true;	
-	imageListXmlData.url = Application.application.parameters.imageListURL;
-	imageListXmlData.send();
-	setSizes(event);
-	imageCanvas.setFocus();
-	//this.addEventListener(KeyboardEvent.KEY_DOWN, onFlashKeyDown); 
-	this.addEventListener(ResizeEvent.RESIZE, onResize);
-	SWFAddress.onChange = handleSWFAddress;
+  doResize = true;  
+  imageListXmlData.url = Application.application.parameters.imageListURL;
+  imageListXmlData.send();
+  setSizes(event);
+  imageCanvas.setFocus();
+  //this.addEventListener(KeyboardEvent.KEY_DOWN, onFlashKeyDown); 
+  this.addEventListener(ResizeEvent.RESIZE, onResize);
+  SWFAddress.onChange = handleSWFAddress;
 }
 
 public function onGetImageList(event:ResultEvent):void {
-  	var rawImageList:Array = ArrayUtil.toArray(event.result.images.image.source);
-        var absoluteImageList:Array = rawImageList.map(function(item:*, index:int, array:Array):String { 
-            return URLUtil.getFullURL(imageListXmlData.url, item.toString());
-        });
+  var rawImageList:Array = ArrayUtil.toArray(event.result.images.image.source);
+  rawImageList.map(function(image:Object, index:int, array:Array):Object { 
+      image.source = URLUtil.getFullURL(imageListXmlData.url, image.source.toString());
+      Logger.info(image.source);
+      return image;
+  });
+  images = new ArrayCollection(rawImageList);
 
-  	images = new ArrayCollection(absoluteImageList);
-
-	handleSWFAddress();
-  	onChange();
-	ExternalInterface.addCallback("onKeyDown", onKeyDown);
+  handleSWFAddress();
+  onChange();
+  ExternalInterface.addCallback("onKeyDown", onKeyDown);
 }
 
 public function onChange():void {
-    mainImage.source = this.imageList.selectedItem.source.toString();
-	SWFAddress.setValue(imageList.selectedIndex.toString());
-	SWFAddress.setTitle(imageListXmlData.lastResult.images.title + " - " + (imageList.selectedIndex + 1) + " of " + images.length);
+  mainImage.source = this.imageList.selectedItem.source.toString();
+  SWFAddress.setValue(imageList.selectedIndex.toString());
+  SWFAddress.setTitle(imageListXmlData.lastResult.images.title + " - " + (imageList.selectedIndex + 1) + " of " + images.length);
 }
 
 public function onComplete(event:Event):void {
-	var content:Bitmap = event.target.content;
-	var imageRatio:Number = content.height/content.width;
-	// fit to width
-	mainImage.width = imageCanvas.width - imageCanvas.verticalScrollBar.width;
-	mainImage.height = mainImage.width * imageRatio;
+  var content:Bitmap = event.target.content;
+  var imageRatio:Number = content.height/content.width;
+  // fit to width
+  mainImage.width = imageCanvas.width - imageCanvas.verticalScrollBar.width;
+  mainImage.height = mainImage.width * imageRatio;
 }
 
 public var scrollbarNeedsResize:Boolean = false;
 
 public function onImageResize(event:Event):void {
-	scrollbarNeedsResize = true;
+  scrollbarNeedsResize = true;
 }
 
 public function onUpdateComplete(event:Event):void {
-	if (!scrollbarNeedsResize) return;
-	imageCanvas.verticalScrollBar.lineScrollSize = 25;
-	imageCanvas.verticalScrollBar.pageScrollSize -= 150;
-	scrollbarNeedsResize = false;
+  if (!scrollbarNeedsResize) return;
+  imageCanvas.verticalScrollBar.lineScrollSize = 25;
+  imageCanvas.verticalScrollBar.pageScrollSize -= 150;
+  scrollbarNeedsResize = false;
 }
 
 public function onFlashKeyDown(event:KeyboardEvent):void {
-	onKeyDown(event.keyCode);
+  onKeyDown(event.keyCode);
 }
+
 public function onKeyDown(keyCode:uint):void {
-	trace("key code: " + keyCode);
-	if (keyCode == 32) { // space key
-		if (imageCanvas.verticalScrollPosition < imageCanvas.maxVerticalScrollPosition) {
-			if (imageCanvas.verticalScrollPosition + imageCanvas.verticalScrollBar.pageScrollSize > imageCanvas.maxVerticalScrollPosition)	{
-				imageCanvas.verticalScrollPosition = imageCanvas.maxVerticalScrollPosition;
-			} else {
-				imageCanvas.verticalScrollPosition += imageCanvas.verticalScrollBar.pageScrollSize;
-			}
-		} else {
-			var oldIndex:uint = imageList.selectedIndex;
-			imageList.selectedIndex += 1;
-			if (oldIndex == imageList.selectedIndex) {
-				showNextWork();
-				return;
-			}
-			imageCanvas.verticalScrollPosition = 0;
-  			onChange();
-		}
-	} else if (keyCode == 87) { // 'w' key
-		goToCollectionPage();
-	} else if (keyCode == 73) { // 'i' key
-		imageListWindow.visible = !imageListWindow.visible;
-		if (imageListWindow.visible == false) {
-			imageCanvas.setFocus();
-		} 
-	} else if (keyCode == 66) { // 'b' key
-		imageCanvas.verticalScrollPosition = 0;
-		imageList.selectedIndex -= 1;
-		onChange(); 
-	} else if (keyCode == 78) { // 'n' key
-		imageCanvas.verticalScrollPosition = 0;
-		imageList.selectedIndex += 1;
-		onChange();
-	} else if (keyCode == 70) { // 'f' key
-		toggleFullscreen();
-	} else if (keyCode == 38) { // up arrow key
-		imageCanvas.verticalScrollPosition -= imageCanvas.verticalScrollBar.lineScrollSize;
-	} else if (keyCode == 40) { // down arrow key
-		imageCanvas.verticalScrollPosition += imageCanvas.verticalScrollBar.lineScrollSize;
-	} else {
-		//trace('doing nothing');
-	}
+  Logger.error("key code: " + keyCode);
+  if (keyCode == 32) { // space key
+    if (imageCanvas.verticalScrollPosition < imageCanvas.maxVerticalScrollPosition) {
+      if (imageCanvas.verticalScrollPosition + imageCanvas.verticalScrollBar.pageScrollSize > imageCanvas.maxVerticalScrollPosition)  {
+        imageCanvas.verticalScrollPosition = imageCanvas.maxVerticalScrollPosition;
+      } else {
+        imageCanvas.verticalScrollPosition += imageCanvas.verticalScrollBar.pageScrollSize;
+      }
+    } else {
+      var oldIndex:uint = imageList.selectedIndex;
+      imageList.selectedIndex += 1;
+      if (oldIndex == imageList.selectedIndex) {
+        showNextWork();
+        return;
+      }
+      imageCanvas.verticalScrollPosition = 0;
+        onChange();
+    }
+  } else if (keyCode == 87) { // 'w' key
+    goToCollectionPage();
+  } else if (keyCode == 73) { // 'i' key
+    imageListWindow.visible = !imageListWindow.visible;
+    if (imageListWindow.visible == false) {
+      imageCanvas.setFocus();
+    } 
+  } else if (keyCode == 66) { // 'b' key
+    imageCanvas.verticalScrollPosition = 0;
+    imageList.selectedIndex -= 1;
+    onChange(); 
+  } else if (keyCode == 78) { // 'n' key
+    imageCanvas.verticalScrollPosition = 0;
+    imageList.selectedIndex += 1;
+    onChange();
+  } else if (keyCode == 70) { // 'f' key
+    toggleFullscreen();
+  } else if (keyCode == 38) { // up arrow key
+    imageCanvas.verticalScrollPosition -= imageCanvas.verticalScrollBar.lineScrollSize;
+  } else if (keyCode == 40) { // down arrow key
+    imageCanvas.verticalScrollPosition += imageCanvas.verticalScrollBar.lineScrollSize;
+  } else {
+    //trace('doing nothing');
+  }
 }
 
 
@@ -190,24 +195,24 @@ public function onKeyDown(keyCode:uint):void {
 
 <mx:Canvas id="imageCanvas" width="100%" height="100%" verticalScrollPolicy="on">
   <local:SmoothImage id="mainImage" left="0" top="0"
-  	 complete="onComplete(event)"
-  	 resize="onImageResize(event)"
-  	 updateComplete="onUpdateComplete(event)" />
+     complete="onComplete(event)"
+     resize="onImageResize(event)"
+     updateComplete="onUpdateComplete(event)" />
 </mx:Canvas>
 
 <mx:TitleWindow 
-	id="imageListWindow"
-	title="Image List" width="500" height="300" borderColor="#408080" 
-	visible="false" showCloseButton="true"
-	>
+  id="imageListWindow"
+  title="Image List" width="500" height="300" borderColor="#408080" 
+  visible="false" showCloseButton="true"
+  >
 
-	<mx:List 
-	  width="100%"
-	  height="100%"
-	  id="imageList" 
-	  dataProvider="{images}"
-	  change="onChange()"
-	  itemRenderer="ImageItem" />
+  <mx:List 
+    width="100%"
+    height="100%"
+    id="imageList" 
+    dataProvider="{images}"
+    change="onChange()"
+    itemRenderer="ImageItem" />
 
 </mx:TitleWindow>
 </mx:Application>
