@@ -1,4 +1,20 @@
+MonkeyVision - Full window sequential image viewer.
 
+I wanted a flash app that would act like CDisplay, only in my browser.  I
+have a django app that sorts my comic books, and some views that will
+extract an image from a zip/rar file.  But you don't need this django app,
+just a simple xml file and some images accessable via urls.
+
+Here's an example xml file:
+
+<images title="This is shown in the browser's title bar" 
+  url="when you hit 'w' this url will be loaded in the window">
+  <image source="relative url to the first image" 
+    name="name of image shown this list images view (hit 'i')" />
+  <image source="..." name="Largo_Winch_01_The_Heir_02.jpg" />
+  [... etc ...]
+</images>
+				
 ########################################
 This project was generated using Sprouts
 http://code.google.com/p/projectsprouts/

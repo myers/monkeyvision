@@ -146,7 +146,7 @@ public function onFlashKeyDown(event:KeyboardEvent):void {
 }
 
 public function onKeyDown(keyCode:uint):void {
-  Logger.error("key code: " + keyCode);
+  Logger.info("key code: " + keyCode);
   if (keyCode == 32) { // space key
     if (imageCanvas.verticalScrollPosition < imageCanvas.maxVerticalScrollPosition) {
       if (imageCanvas.verticalScrollPosition + imageCanvas.verticalScrollBar.pageScrollSize > imageCanvas.maxVerticalScrollPosition)  {
